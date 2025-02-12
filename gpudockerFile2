@@ -1,5 +1,5 @@
 # 选择包含 CUDA 11.8 的基础镜像
-FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nvidia/cuda:12.3.2-cudnn9-devel-ubuntu22.04
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/pytorch/pytorch:2.5.0-cuda12.4-cudnn9-runtime
 
 # 设置环境变量，避免交互式询问
 ENV DEBIAN_FRONTEND=noninteractive
