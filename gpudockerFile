@@ -29,9 +29,12 @@ RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86
 # 安装 cuDNN 9.1.0
 # 注意：需要确保对应的包版本存在于 NVIDIA 仓库中
 # 若仓库中没有对应版本，可能需要手动下载安装包进行安装
+
+
+RUN wget wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb && dpkg -i cuda-keyring_1.1-1_all.deb
+
 RUN apt-get update && apt-get install -y \
-    libcudnn9=9.1.0.43-1+cuda12.1 \
-    libcudnn9-dev=9.1.0.43-1+cuda12.1 \
+    cudnn-cuda-12\
     && rm -rf /var/lib/apt/lists/*
 
 # 下载并编译安装 Python 3.10.16
