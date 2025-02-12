@@ -1,0 +1,78 @@
+# 选择包含 CUDA 11.8 的基础镜像
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04
+
+# 设置环境变量，避免交互式询问
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 更新系统并安装必要的依赖
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg2 \
+    software-properties-common \
+    build-essential \
+    zlib1g-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libssl-dev \
+    libreadline-dev \
+    libffi-dev \
+    libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 添加 NVIDIA 官方仓库
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin \
+    && mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600 \
+    && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/3bf863cc.pub \
+    && add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /"
+
+# 安装 cuDNN
+RUN apt-get update && apt-get install -y \
+    libcudnn8=8.9.2.26-1+cuda11.8 \
+    libcudnn8-dev=8.9.2.26-1+cuda11.8 \
+    && rm -rf /var/lib/apt/lists/*
+
+# 下载并编译安装 Python 3.10.16
+RUN wget https://www.python.org/ftp/python/3.10.16/Python-3.10.16.tgz \
+    && tar -xzf Python-3.10.16.tgz \
+    && cd Python-3.10.16 \
+    && ./configure --enable-optimizations \
+    && make -j$(nproc) \
+    && make altinstall \
+    && cd .. \
+    && rm -rf Python-3.10.16.tgz Python-3.10.16
+
+# 创建软链接，使 python 和 pip 指向 Python 3.10.16
+RUN ln -s /usr/local/bin/python3.10 /usr/local/bin/python \
+    && ln -s /usr/local/bin/pip3.10 /usr/local/bin/pip
+
+# 设置环境变量
+ENV LD_LIBRARY_PATH /usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH
+
+
+# 在容器内创建 /home/code 目录
+RUN mkdir /home/code
+
+# 设置工作目录为 /home/code
+WORKDIR /home/code
+
+# 将本地的 index.py 文件复制到容器内的 /home/code 目录
+ADD index.py  /home/code/index.py
+
+# 将本地的 requirements.txt 文件复制到容器内的 /home/code 目录
+ADD requirements.txt  /home/code/requirements.txt
+
+ADD download_model.py  /home/code/download_model.py
+
+
+# 安装 requirements.txt 中指定的 Python 依赖
+RUN pip install -r /home/code/requirements.txt
+
+
+RUN python download_model.py
+
+# 暴露端口 9000
+EXPOSE 80
+
+# 容器启动时执行 Python 脚本 index.py
+CMD ["python", "index.py"]
